@@ -4,11 +4,16 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
 import GUI from "lil-gui";
+import gradientTexture from './gradients/3.jpg';
+import { NearestFilter } from 'three';
+
 const canvas = document.querySelector("canvas");
 
 // for debug panel
 const parameters = {
   color: '',
+  lightColor: '',
+  lightIntensity: 1,
   radius: 10,
   tube: 3
 }
@@ -40,6 +45,13 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // CAMERA controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
+// LIGHT
+const light = new THREE.AmbientLight(parameters.lightColor, 0.5)
+light.position.set(50, 50 , 50)
+const pointLight = new THREE.PointLight(parameters.lightColor, 0.5)
+pointLight.position.set(38, 38, 38)
+light.color.set(parameters.lightColor)
+pointLight.color.set(parameters.lightColor)
 
 // maintains sizing despite window resizing by resetting size options on window resize
 window.addEventListener("resize", () => {
@@ -51,10 +63,21 @@ window.addEventListener("resize", () => {
   camera.aspect = sizes.width / sizes.height;
 });
 
-// objects
-const geometry = new THREE.TorusKnotGeometry(parameters.radius, parameters.tube, 100, 16);
-const material = new THREE.MeshToonMaterial({ color: parameters.color });
-const mesh = new THREE.Mesh(geometry, material);
+// TEXTURE
+const textureLoader = new THREE.TextureLoader()
+const toonTexture = textureLoader.load(gradientTexture)
+toonTexture.minFilter = THREE.NearestFilter
+toonTexture.magFilter = THREE.NearestFilter
+toonTexture.generateMipmaps = false
+
+// OBJECTS
+// const geometry = ;
+const material = new THREE.MeshToonMaterial();
+material.gradientMap = toonTexture
+const mesh = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(parameters.radius, parameters.tube, 100, 16),
+  material
+  );
 
 // for axes view
 const axesHelper = new THREE.AxesHelper();
@@ -73,15 +96,26 @@ gui.addColor(parameters, 'color').onChange(() => {
   // onChange, set material color to changed selection
   material.color.set(parameters.color)
 });
-// CAMERA
+// LIGHTS
+gui.addColor(light, 'color').onChange(() => {
+  light.color.set(parameters.lightColor)
+})
+// 
 // **
 
 // add items to scene
-scene.add(camera, mesh, axesHelper);
+scene.add(camera, mesh, axesHelper, light, pointLight);
+
+const clock = new THREE.Clock()
 
 const animationTick = () => {
+  const elapsedTime = clock.getElapsedTime()
   controls.update();
-  
+
+  mesh.rotation.x = 0.1 * elapsedTime
+  mesh.rotation.y = 0.1 * elapsedTime
+  mesh.rotation.z = 0.1 * elapsedTime
+
   renderer.render(scene, camera);
   
   window.requestAnimationFrame(animationTick);
