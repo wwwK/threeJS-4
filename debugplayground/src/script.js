@@ -15,7 +15,14 @@ const parameters = {
   lightColor: '',
   lightIntensity: 1,
   radius: 10,
-  tube: 3
+  tube: 3,
+  p: 2,
+  q: 3,
+  rotation: {
+    x: 0.1,
+    y: 0.1,
+    z: 0.1
+  }
 }
 
 // sets reusable sizes for use globally
@@ -71,11 +78,12 @@ toonTexture.magFilter = THREE.NearestFilter
 toonTexture.generateMipmaps = false
 
 // OBJECTS
-// const geometry = ;
+const geometry = new THREE.TorusKnotGeometry(parameters.radius, parameters.tube, 100, 16, parameters.p, parameters.q);
+
 const material = new THREE.MeshToonMaterial();
 material.gradientMap = toonTexture
 const mesh = new THREE.Mesh(
-  new THREE.TorusKnotGeometry(parameters.radius, parameters.tube, 100, 16),
+  geometry,
   material
   );
 
@@ -85,9 +93,16 @@ const axesHelper = new THREE.AxesHelper();
 const gui = new GUI();
 gui.title('Playground Controls')
 // MESH: edit position on screen
-gui.add(mesh.position, 'x').min(-3).max(3).step(0.01).name('X-Axis');
-gui.add(mesh.position, 'y').min(-3).max(3).step(0.01).name('Y-Axis');
-gui.add(mesh.position, 'z').min(-3).max(3).step(0.01).name('Z-Axis');
+const meshPosition = gui.addFolder('Position')
+meshPosition.add(mesh.position, 'x').min(-3).max(3).step(0.01).name('X-Axis');
+meshPosition.add(mesh.position, 'y').min(-3).max(3).step(0.01).name('Y-Axis');
+meshPosition.add(mesh.position, 'z').min(-3).max(3).step(0.01).name('Z-Axis');
+// ** FIX **
+const meshRotation = gui.addFolder('Rotation')
+meshRotation.add(mesh.rotation, 'x').min(-0.3).max(0.3).step(0.01).name('X-Axis')
+// **** ^ FIX ^ ***
+// LOOPS
+const appearanceFolder = gui.addFolder('Appearance')
 // edit mesh visibility
 gui.add(mesh, 'visible');
 gui.add(material, 'wireframe');
@@ -99,7 +114,7 @@ gui.addColor(parameters, 'color').onChange(() => {
 // LIGHTS
 gui.addColor(light, 'color').onChange(() => {
   light.color.set(parameters.lightColor)
-})
+}).name('light color')
 // 
 // **
 
@@ -112,9 +127,9 @@ const animationTick = () => {
   const elapsedTime = clock.getElapsedTime()
   controls.update();
 
-  mesh.rotation.x = 0.1 * elapsedTime
-  mesh.rotation.y = 0.1 * elapsedTime
-  mesh.rotation.z = 0.1 * elapsedTime
+  mesh.rotation.x = parameters.rotation.x * elapsedTime
+  mesh.rotation.y = parameters.rotation.y * elapsedTime
+  mesh.rotation.z = parameters.rotation.z * elapsedTime
 
   renderer.render(scene, camera);
   
